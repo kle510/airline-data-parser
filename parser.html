@@ -1,0 +1,219 @@
+<!-- Kevin L
+    https://github.com/kle510
+    January 2017 -->
+
+
+<HTML>
+    <HEAD>
+
+        <script type="text/javascript">
+
+            var xmlDoc;
+            var html_text;
+
+
+            function isKeyPressed(ele, event) {
+
+                if (event.keyCode == 13 || event.which == 13) {
+                    viewXML(ele);
+                } 
+            }
+
+            function loadXML(url) {
+                if (window.XMLHttpRequest){
+                    // code for IE7+, Firefox, Chrome, Opera, Safari -- create XML object
+                    xmlhttp=new XMLHttpRequest();
+                }
+                else{
+                    // code for IE6, IE5 -- create XML object
+                    xmlhttp=new ActiveXObject("Microsoft.XMLHTTP");
+                }
+                xmlhttp.open("GET",url,false); //open, send, responseXML are
+
+
+                try{
+
+                    xmlhttp.send(); //properties of XMLHTTPRequest
+                }
+                catch(err){
+                    window.alert("Error: XML File Does Not Exist");
+                    return;
+                }
+
+
+                if (xmlhttp.status == "404"){
+                    window.alert("Error: XML File Does Not Exist");
+                    return;
+                }
+
+                xmlDoc=xmlhttp.responseXML;
+
+                if(xmlDoc == null || xmlDoc.getElementsByTagName("parsererror")[0]){
+                    window.alert("Error: Invalid XML");
+                    return;
+                }
+
+                return xmlDoc;
+            }
+
+            function viewXML(input){
+
+                var URL = input.link.value.trim();
+                
+                if (URL == ""){
+                    window.alert("Error: No value was entered");
+                    return;
+                }
+                
+                xmlDoc = loadXML(URL);
+
+                if (xmlDoc == null || xmlDoc.getElementsByTagName("parsererror")[0]){
+                    return;
+                }
+
+                if(xmlDoc.getElementsByTagName("Table").item(0).childNodes.length == 3){
+                    window.alert("Error: No Airline Companies");
+                }
+                else {
+                    if (window.ActiveXObject){ //if IE, simply execute script (due to async prop). 
+                        if (xmlDoc.parseError.errorCode != 0) {
+                            var myErr = xmlDoc.parseError;
+                            generateError(xmlDoc);
+                            hWin = window.open("", "Error", "height=300,width=340");
+                            hWin.document.write(html_text);
+                        } else {
+                            generateHTML(xmlDoc);
+                            hWin = window.open("", "Assignment 4", "height=800,width=600");
+                            hWin.document.write(html_text);
+                        }
+                    } else{ //else if FF, execute script once XML object has loaded
+                        xmlDoc.onload=generateHTML(xmlDoc);
+                        hWin = window.open("", "Assignment4", "height=800,width=600, scrollbars=yes");
+                        hWin.document.write(html_text);
+                    }
+                    hWin.document.close();
+                }
+
+            }
+
+
+            function generateHTML(xmlDoc){
+
+                var ELEMENT_NODE = 1;
+
+                //edit the table layout tomorrow
+                html_text="<html><head></head><body> ";
+
+
+                html_text+="<table border='2'>";
+                html_text+="<tbody>";
+                html_text+="<tr>";
+
+
+
+                headerNodeList=xmlDoc.getElementsByTagName("Table").item(0).childNodes.item(1).childNodes;
+
+                //two for loops : need to get # of rows
+
+
+
+                for(i=0;i< headerNodeList.length;i++){
+
+                    if (headerNodeList.item(i).nodeType == ELEMENT_NODE){
+
+                        headerData = headerNodeList.item(i).childNodes.item(0).nodeValue.trim();
+
+                        html_text+="<th>"+headerData+"</th>";
+                    }
+                }
+
+                html_text+="</tr>";  
+
+                rowList=xmlDoc.getElementsByTagName("Table").item(0).childNodes;
+
+
+                for (i=0; i<rowList.length; i++){
+                    if (rowList.item(i).tagName == "Row"){
+
+                        html_text+="<tr>";  
+                        rowNodeList=xmlDoc.getElementsByTagName("Table").item(0).childNodes.item(i).childNodes;
+
+
+                        for (j=0; j<rowNodeList.length; j++){
+                            if (rowNodeList.item(j).nodeType == ELEMENT_NODE){
+
+
+                                if(rowNodeList.item(j).firstChild == null){
+                                    html_text+= "<td></td>";
+                                }
+                                else if(rowNodeList.item(j).tagName =="Hubs"){
+                                    //insert hub code 
+                                    html_text+="<td>";
+
+                                    hubNodeList = rowNodeList.item(j).childNodes;
+
+
+                                    for (k=0; k<hubNodeList.length; k++){
+                                        if (hubNodeList.item(k).nodeType == ELEMENT_NODE){
+
+                                            if(hubNodeList.item(k).firstChild == null){
+                                                html_text+="<br><b>&#8226</b>";
+                                            }
+                                            else if(k==1){
+                                                html_text+="<br><b>&#8226 " + hubNodeList.item(k).childNodes.item(0).nodeValue.trim()+"</b>";
+                                            }
+                                            else{
+                                                html_text+="<br>&#8226 " + hubNodeList.item(k).childNodes.item(0).nodeValue.trim();
+
+                                            }
+
+                                        }
+                                    }
+
+                                    html_text+="</td>";
+
+                                }
+                                else if(rowNodeList.item(j).tagName =="Plane"){
+                                    html_text+="<td><img src='"+rowNodeList.item(j).firstChild.nodeValue.trim()+"' width='240' height='135'></td>";
+                                }
+                                else if(rowNodeList.item(j).tagName =="HomePage"){
+                                    html_text+="<td><a href='"+rowNodeList.item(j).firstChild.nodeValue.trim()+"'>"+ rowNodeList.item(j).firstChild.nodeValue.trim()+"</a></td>";
+                                }
+                                else{
+                                    rowData = rowNodeList.item(j).childNodes.item(0).nodeValue.trim();
+                                    html_text+="<td>"+ rowData +"</td>";
+                                }
+                            }
+                        }
+                        html_text+="</tr>"; 
+                    }                
+                }
+
+                html_text+="</tbody>";  
+                html_text+="</table>";  
+                html_text+="</body></html>";  
+            }
+
+        </script>
+
+
+    </HEAD>
+    <BODY>
+
+        <div style="text-align: center;">
+            <p><b>Enter Url for Airlines List XML File</b></p>
+            <form>
+                <input type="text" name="link" onkeypress="isKeyPressed(this.form, event)"/>
+
+                <p>
+                    <input type="button"  name="button" value="Submit Query"   onclick="viewXML(this.form)" />
+                </p>
+
+            </form>
+        </div>
+
+
+        <noscript>
+
+            </BODY>
+        </HTML>
